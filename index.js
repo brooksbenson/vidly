@@ -58,10 +58,10 @@ app.get('/api/genres/:id', (req, res) => {
 
 app.put('/api/genres/:id', (req, res) => {
   validateGenre(req.body)
-    .then(({ name: update }) => {
+    .then(update => {
       findGenre(req.params.id)
         .then(({ genre }) => {
-          genre.name = update;
+          genre.name = update.name;
           res.status(200).send(genre);
         })
         .catch(e => {
@@ -75,10 +75,10 @@ app.put('/api/genres/:id', (req, res) => {
 
 app.post('/api/genres', (req, res) => {
   validateGenre(req.body)
-    .then(g => {
+    .then(newGenre => {
       const genre = {
         id: genres.length + 1,
-        name: g.name
+        name: newGenre.name
       };
       genres.push(genre);
       res.status(200).send(genre);

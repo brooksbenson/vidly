@@ -1,100 +1,40 @@
+// depencies
+const config = require('config');
 const express = require('express');
-const Joi = require('joi');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const debug = require('debug')('app');
+const pagesRouter = require('./routes/pages');
+const genresRouter = require('./routes/genres');
+const customersRouter = require('./routes/customers');
+require('./models/connect');
 
+// middleware
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.use(helmet());
+app.use('/', pagesRouter);
+app.use('/api/genres', genresRouter);
+app.use('/api/customers', customersRouter);
+
+// views
+app.set('view engine', 'pug');
+app.set('views', './views');
+
+// config
+console.log(`App name: ${config.get('name')}`);
+console.log(`Mail host: ${config.get('mail.host')}`);
+console.log(`Mail password: ${config.get('mail.password')}`);
+
+if (app.get('env') === 'development') {
+  app.use(morgan());
+  debug('app in dev');
+  debug('morgan enabled...');
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Listening on port ${3000}.`);
-});
-
-const genres = [
-  {
-    id: 1,
-    name: 'Comedy'
-  },
-  {
-    id: 2,
-    name: 'Drama'
-  },
-  {
-    id: 3,
-    name: 'Action'
-  }
-];
-
-function validateGenre(genre) {
-  return Joi.validate(genre, {
-    name: Joi.string()
-      .min(3)
-      .required()
-  });
-}
-
-function findGenre(id) {
-  id = ~~id;
-  return new Promise((resolve, reject) => {
-    genres.forEach((g, i) => {
-      if (g.id === id) resolve({ genre: g, index: i });
-    });
-    reject(`Genre with id ${id} does not exist`);
-  });
-}
-
-app.get('/api/genres', (req, res) => {
-  res.status(200).send(genres);
-});
-
-app.get('/api/genres/:id', (req, res) => {
-  findGenre(req.params.id)
-    .then(({ genre }) => {
-      res.status(200).send(genre);
-    })
-    .catch(e => {
-      res.status(404).send(e);
-    });
-});
-
-app.put('/api/genres/:id', (req, res) => {
-  validateGenre(req.body)
-    .then(update => {
-      findGenre(req.params.id)
-        .then(({ genre }) => {
-          genre.name = update.name;
-          res.status(200).send(genre);
-        })
-        .catch(e => {
-          res.status(404).send(e);
-        });
-    })
-    .catch(e => {
-      res.status(400).send(e.details[0].message);
-    });
-});
-
-app.post('/api/genres', (req, res) => {
-  validateGenre(req.body)
-    .then(newGenre => {
-      const genre = {
-        id: genres.length + 1,
-        name: newGenre.name
-      };
-      genres.push(genre);
-      res.status(200).send(genre);
-    })
-    .catch(e => {
-      res.status(400).send(e);
-    });
-});
-
-app.delete('/api/genres/:id', (req, res) => {
-  findGenre(req.params.id)
-    .then(({ index }) => {
-      const genre = genres.splice(index, 1);
-      res.status(200).send(genre);
-    })
-    .catch(e => {
-      res.status(404).send(e);
-    });
+  console.log(`Listening on port ${PORT}.`);
 });

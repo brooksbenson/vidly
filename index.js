@@ -7,6 +7,7 @@ const debug = require('debug')('app');
 const pagesRouter = require('./routes/pages');
 const genresRouter = require('./routes/genres');
 const customersRouter = require('./routes/customers');
+const moviesRouter = require('./routes/movies');
 require('./models/connect');
 
 // middleware
@@ -18,6 +19,7 @@ app.use(helmet());
 app.use('/', pagesRouter);
 app.use('/api/genres', genresRouter);
 app.use('/api/customers', customersRouter);
+app.use('/api/movies', moviesRouter);
 
 // views
 app.set('view engine', 'pug');

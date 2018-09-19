@@ -1,7 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const { Customer, inputSchema } = require('../models/Customer');
-const deriveSchema = require('../models/helpers/deriveSchema');
+const updateObj = require('../helpers/update-object');
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  const updateSchema = deriveSchema(req.body, inputSchema);
+  const updateSchema = updateObj(inputSchema, req.body);
   try {
     await Joi.validate(req.body, updateSchema);
     const updatedCustomer = await Customer.findByIdAndUpdate(

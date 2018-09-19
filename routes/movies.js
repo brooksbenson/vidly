@@ -1,25 +1,9 @@
 const express = require('express');
 const Joi = require('joi');
 const { Movie, inputSchema } = require('../models/Movie');
-const deriveSchema = require('../models/helpers/deriveSchema');
+const updateObj = require('../helpers/update-object');
 
 const router = express.Router();
-
-// createj
-
-router.post('/', async (req, res) => {
-  const input = { ...req.body };
-  try {
-    await Joi.validate(input, inputSchema);
-    let movie = new Movie(input);
-    movie = await movie.save();
-    res.status(200).send(movie);
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
-});
-
-// read
 
 router.get('/', async (req, res) => {
   try {
@@ -41,40 +25,30 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// update
-
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
   const input = { ...req.body };
   try {
-    if (genres in input) {
-      throw new Error('use api/movies/:id/genres to modify genres');
-    }
-    await Joi.validate(input, deriveSchema(input, inputSchema));
-    const updatedMovie = await Movie.findByIdAndUpdate(
-      id,
-      { $set: { ...input } },
-      { new: true }
-    );
-    res.status(200).send(updatedMovie);
+    await Joi.validate(input, updateObj(inputSchema, Object.keys(input)));
+    const movie = await Movie.findById(req.params.id);
+    updateMovie(movie, input);
+    await movie.save();
+    res.status(200).send(movie);
   } catch (err) {
     res.status(400).send(err.message);
   }
 });
 
-router.put('/:id/genres', async (req, res) => {
-  const { id } = req.params;
-  const { genres } = req.body;
+router.post('/', async (req, res) => {
+  const input = { ...req.body };
   try {
-    await Joi.validate(genres, inputSchema.genres);
-    const movie = await Movie.findById(id);
-    for (let genre in genres) {
-      if 
-    }
+    await Joi.validate(input, inputSchema);
+    let movie = new Movie(input);
+    movie = await movie.save();
+    res.status(200).send(movie);
+  } catch (err) {
+    res.status(400).send(err.message);
   }
-})
-
-// delete
+});
 
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
@@ -87,3 +61,30 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+// helpers
+function updateMovie(movie, input) {
+  // movie needs to be updated according to the input
+  for (path in input) {
+    path === 'genres'
+      ? updateGenres(movie.genres, input.genres)
+      : (movie[path] = input[path]);
+  }
+}
+
+function updateGenres(original, updates) {
+  updates.forEach(u => {
+    if (u[0] === '-') {
+      const i = original.indexOf(u.slice(1));
+      if (i === -1) {
+        throw new Error(`${u} is not a listed genre for this movie`);
+      }
+      original.splice(i, 1);
+    } else {
+      if (original.includes(u)) {
+        throw new Error(`${u} is already a listed genre for this movie`);
+      }
+      original.push(u);
+    }
+  });
+}

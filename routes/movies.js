@@ -33,7 +33,13 @@ router.put('/:id', auth, async (req, res) => {
   // operation
   const movie = await Movie.findById(req.params.id);
   for (prop in input) {
-    movie[prop] = input[prop];
+    switch (prop) {
+      case 'genres':
+        movie.updateGenres(input[prop]);
+        break;
+      default:
+        movie[prop] = input[prop];
+    }
   }
   await movie.save();
   res.status(200).send(movie);

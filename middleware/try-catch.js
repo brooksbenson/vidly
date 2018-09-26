@@ -9,3 +9,11 @@ module.exports = function(handler) {
     }
   };
 };
+
+/*
+  This functionality is created
+  with the express-async-errors
+  package, which monkey patches
+  each route with a function
+  similar to that above.
+*/

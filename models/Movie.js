@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+const { cleanArray } = require('cleanly');
 
 const inputSchema = {
   title: Joi.string()
@@ -16,49 +17,45 @@ const inputSchema = {
   numberInStock: Joi.number()
 };
 
-const Movie = mongoose.model(
-  'Movie',
-  new mongoose.Schema({
-    title: {
-      type: String,
-      required: true,
-      min: 1,
-      max: 50
-    },
-    genres: {
-      required: true,
-      type: [String],
-      min: 1,
-      max: 50,
-      lowercase: true,
-      set(updates) {
-        const copy = { ...this.genres };
-        updates.forEach(u => {
-          if (u[0] === '-') {
-            const i = copy.indexOf(u.slice(1));
-            if (i === -1) {
-              throw new Error(`${u} is not a listed genre for this movie`);
-            }
-            copy.splice(i, 1);
-          } else {
-            if (copy.includes(u)) {
-              throw new Error(`${u} is already a listed genre for this movie`);
-            }
-            copy.push(u);
-          }
-        });
-        return copy;
-      }
-    },
-    numberInStock: {
-      type: Number,
-      default: 0
-    },
-    dailyRentalRate: {
-      type: Number,
-      required: true
+const movieSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    min: 1,
+    max: 50
+  },
+  genres: {
+    required: true,
+    type: [String],
+    min: 1,
+    max: 50,
+    lowercase: true,
+    set(genres) {
+      return genres.map(g => g.toLowerCase());
     }
-  })
-);
+  },
+  numberInStock: {
+    type: Number,
+    default: 0
+  },
+  dailyRentalRate: {
+    type: Number,
+    required: true
+  }
+});
+
+movieSchema.methods.updateGenres = function(updates) {
+  const map = {
+    ...cleanArray(this.genres),
+    ...cleanArray(updates)
+  };
+  this.genres = [];
+  for (genre in map) {
+    let keep = map[genre];
+    if (keep) this.genres.push(genre);
+  }
+};
+
+const Movie = mongoose.model('Movie', movieSchema);
 
 module.exports = { inputSchema, Movie };

@@ -9,7 +9,6 @@ const router = express.Router();
 
 // get all
 router.get('/', async (req, res) => {
-  throw new Error('Uh oh');
   // operation
   const genres = await Genre.find().sort('name');
   res.status(200).send(genres);

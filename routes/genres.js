@@ -1,62 +1,61 @@
 const express = require('express');
 const Joi = require('joi');
+const _ = require('lodash');
 const { Genre, inputSchema } = require('../models/Genre');
-const routeDebug = require('debug')('dev:routes');
+const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 const router = express.Router();
 
+// get all
 router.get('/', async (req, res) => {
-  try {
-    const genres = await Genre.find().sort('name');
-    res.status(200).send(genres);
-  } catch (err) {
-    res.status(404).send(err.message);
-  }
+  throw new Error('Uh oh');
+  // operation
+  const genres = await Genre.find().sort('name');
+  res.status(200).send(genres);
 });
 
+// get one
 router.get('/:id', async (req, res) => {
+  // normalization
   const { id } = req.params;
-  try {
-    const genre = await Genre.findById(id);
-    res.status(200).send(genre);
-  } catch (err) {
-    res.status(404).send(err.message);
-  }
+  // operation
+  const genre = await Genre.findById(id);
+  res.status(200).send(genre);
 });
 
-router.put('/:id', async (req, res) => {
-  const { name } = req.body;
-  try {
-    await Joi.validate({ name }, inputSchema);
-    const updatedGenre = await Genre.findByIdAndUpdate(
-      req.params.id,
-      { name },
-      { new: true }
-    );
-    res.status(200).send(updatedGenre);
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
+// update one
+router.put('/:id', auth, async (req, res) => {
+  // normalization
+  const { id } = req.params;
+  const input = _.pick(req.body, Object.keys(inputSchema));
+  const schema = _.pick(inputSchema, Object.keys(input));
+  await Joi.validate(input, schema);
+  // operation
+  const updatedGenre = await Genre.findByIdAndUpdate(id, input, {
+    new: true
+  });
+  res.status(200).send(updatedGenre);
 });
 
-router.post('/', async (req, res) => {
-  const { name } = req.body;
-  try {
-    await Joi.validate({ name }, inputSchema);
-    const genre = new Genre({ name });
-    res.status(200).send(await genre.save());
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
+// create one
+router.post('/', auth, async (req, res) => {
+  // normalization
+  const input = _.pick(req.body, Object.keys(inputSchema));
+  const schema = inputSchema;
+  await Joi.validate(input, inputSchema);
+  // operation
+  const createdGenre = await new Genre({ name }).save();
+  res.status(200).send(createdGenre);
 });
 
-router.delete('/:id', async (req, res) => {
-  try {
-    const result = await Genre.findByIdAndRemove(req.params.id);
-    res.status(200).send(result);
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
+// delete one
+router.delete('/:id', [auth, admin], async (req, res) => {
+  // normalization
+  const { id } = req.params;
+  // operation
+  const deletedGenre = await Genre.findByIdAndRemove(req.params.id);
+  res.status(200).send(deletedGenre);
 });
 
 module.exports = router;

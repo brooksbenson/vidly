@@ -1,60 +1,59 @@
 const express = require('express');
 const Joi = require('joi');
+const _ = require('lodash');
 const { Customer, inputSchema } = require('../models/Customer');
-const updateObj = require('../helpers/update-object');
+const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 const router = express.Router();
 
+// get all
 router.get('/', async (req, res) => {
-  try {
-    res.status(200).send(await Customer.find());
-  } catch (err) {
-    res.status(400).send('There was an error with your request');
-  }
+  // operation
+  res.status(200).send(await Customer.find());
 });
 
+// get one
 router.get('/:id', async (req, res) => {
-  try {
-    const customer = await Customer.findById(req.params.id);
-    if (!customer) throw new Error('Could not find customer with that id');
-    else res.status(200).send(customer);
-  } catch (err) {
-    res.status(404).send(err.message);
-  }
+  // normalization
+  const { id } = req.params;
+  // operation
+  const customer = await Customer.findById(req.params.id);
+  if (!customer) throw new Error('Could not find customer with that id');
+  else res.status(200).send(customer);
 });
 
-router.put('/:id', async (req, res) => {
-  const updateSchema = updateObj(inputSchema, req.body);
-  try {
-    await Joi.validate(req.body, updateSchema);
-    const updatedCustomer = await Customer.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    res.status(200).send(updatedCustomer);
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
+// update one
+router.put('/:id', auth, async (req, res) => {
+  // normalization
+  const { id } = req.params;
+  const input = _.pick(req.body, Object.keys(inputSchema));
+  const schema = _.pick(inputSchema, Object.keys(input));
+  await Joi.validate(input, schema);
+  // operation
+  const updatedCustomer = await Customer.findByIdAndUpdate(id, input, {
+    new: true
+  });
+  res.status(200).send(updatedCustomer);
 });
 
-router.post('/', async (req, res) => {
-  try {
-    await Joi.validate(req.body, inputSchema);
-    const newCustomer = new Customer(req.body);
-    res.status(200).send(await newCustomer.save());
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
+// create one
+router.post('/', auth, async (req, res) => {
+  // normalization
+  const input = _.pick(req.body, Object.keys(inputSchema));
+  await Joi.validate(input, inputSchema);
+  // operation
+  const customer = await new Customer().save();
+  res.status(200).send(customer);
 });
 
-router.delete('/:id', async (req, res) => {
-  try {
-    const deletedCustomer = await Customer.findByIdAndRemove(req.params.id);
-    res.status(200).send(deletedCustomer);
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
+// remove one
+router.delete('/:id', [auth, admin], async (req, res) => {
+  // normalization
+  const { id } = req.params;
+  // operation
+  const customer = await Customer.findByIdAndRemove(id);
+  res.status(200).send(customer);
 });
 
 module.exports = router;

@@ -3,8 +3,8 @@ const Joi = require('joi');
 
 exports.inputSchema = {
   name: Joi.string()
-    .min(5)
-    .max(50)
+    .min(3)
+    .max(30)
     .required()
 };
 

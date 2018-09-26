@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
 
-exports.inputSchema = {
+const inputSchema = {
   title: Joi.string()
     .min(1)
     .max(50)
@@ -16,7 +16,7 @@ exports.inputSchema = {
   numberInStock: Joi.number()
 };
 
-exports.Movie = mongoose.model(
+const Movie = mongoose.model(
   'Movie',
   new mongoose.Schema({
     title: {
@@ -30,7 +30,25 @@ exports.Movie = mongoose.model(
       type: [String],
       min: 1,
       max: 50,
-      lowercase: true
+      lowercase: true,
+      set(updates) {
+        const copy = { ...this.genres };
+        updates.forEach(u => {
+          if (u[0] === '-') {
+            const i = copy.indexOf(u.slice(1));
+            if (i === -1) {
+              throw new Error(`${u} is not a listed genre for this movie`);
+            }
+            copy.splice(i, 1);
+          } else {
+            if (copy.includes(u)) {
+              throw new Error(`${u} is already a listed genre for this movie`);
+            }
+            copy.push(u);
+          }
+        });
+        return copy;
+      }
     },
     numberInStock: {
       type: Number,
@@ -42,3 +60,5 @@ exports.Movie = mongoose.model(
     }
   })
 );
+
+module.exports = { inputSchema, Movie };

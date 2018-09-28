@@ -1,6 +1,6 @@
-const winston = require('winston');
+const expressLogger = require('../logging/express');
 
 module.exports = function(err, req, res, next) {
-  winston.error(err.message, err);
+  expressLogger.info(err.message, err);
   res.status(500).send('Something failed.');
 };

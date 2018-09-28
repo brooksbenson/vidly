@@ -9,7 +9,7 @@ module.exports = app => {
   app.use(express.static('public'));
   app.use(helmet());
   app.use(error);
-  if (app.get('environment') === 'development') {
+  if (app.get('env') === 'development') {
     app.use(morgan('tiny'));
   }
 };

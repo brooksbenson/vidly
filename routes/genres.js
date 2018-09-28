@@ -41,10 +41,9 @@ router.put('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   // normalization
   const input = _.pick(req.body, Object.keys(inputSchema));
-  const schema = inputSchema;
   await Joi.validate(input, inputSchema);
   // operation
-  const createdGenre = await new Genre({ name }).save();
+  const createdGenre = await new Genre(input).save();
   res.status(200).send(createdGenre);
 });
 

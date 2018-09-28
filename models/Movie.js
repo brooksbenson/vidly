@@ -26,13 +26,14 @@ const movieSchema = new mongoose.Schema({
   },
   genres: {
     required: true,
-    type: [String],
-    min: 1,
-    max: 50,
-    lowercase: true,
-    set(genres) {
-      return genres.map(g => g.toLowerCase());
-    }
+    type: [
+      {
+        type: String,
+        min: 1,
+        max: 50,
+        lowercase: true
+      }
+    ]
   },
   numberInStock: {
     type: Number,
